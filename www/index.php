@@ -66,7 +66,10 @@ $data = fetch_data();
 
 // Basic interface
 $app->get('/', function ( ) use ($app, $data) {
-    echo 'Hey';
+    $app->response()->headers->set('Content-Type', 'application/json');
+    $app->response()->setStatus(200);
+    echo $data;
+    die();
 });
 
 /**
