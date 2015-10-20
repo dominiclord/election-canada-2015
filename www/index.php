@@ -50,6 +50,18 @@ function fetch_data() {
     return $data;
 }
 
+// For finding data in this HUUUUUGE array
+// @see http://stackoverflow.com/a/28970200
+function objArraySearch($array, $index, $value){
+    $item = null;
+    foreach($array as $arrayInf) {
+        if($arrayInf->{$index}==$value){
+            return $arrayInf;
+        }
+    }
+    return $item;
+}
+
 $data = fetch_data();
 
 // Basic interface
@@ -65,7 +77,7 @@ $app->get('/', function ( ) use ($app, $data) {
 $app->group('/api', function () use ($app, $data) {
 
     /**
-     * Fetch all posts
+     * Fetch all candidates
      * @todo Add authentification
      * @param $app   Application
      * @param $data  ALL DATA
@@ -77,8 +89,38 @@ $app->group('/api', function () use ($app, $data) {
         $app->response()->headers->set('Content-Type', 'application/json');
         $app->response()->setStatus(200);
 
-        //var_dump($data);
         echo json_encode($data->C);
+    });
+    /**
+     * Fetch specific results for a candidate
+     * @todo Add authentification
+     * @param $app   Application
+     * @param $data  ALL DATA
+     */
+    $app->get('/candidates/:id', function ($id = null) use ($app, $data) {
+
+
+        try {
+            $data = json_decode($data);
+
+            $candidate = json_encode(objArraySearch($data->C, 'I', $id));
+
+            $response = [
+                'results' => $candidate,
+                'status' => 'OK'
+            ];
+        } catch(Exception $e) {
+            $response = [
+                'error_message' => 'Bad request, I dunno',
+                'results' => [],
+                'status' => 'ERROR'
+            ];
+        }
+
+        $app->response()->headers->set('Content-Type', 'application/json');
+        $app->response()->setStatus(200);
+        echo json_encode($response);
+        die();
     });
 
 });
