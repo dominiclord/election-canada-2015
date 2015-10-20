@@ -81,27 +81,37 @@ $app->group('/api', function () use ($app, $data) {
 
     /**
      * Fetch all candidates
-     * @todo Add authentification
      * @param $app   Application
      * @param $data  ALL DATA
      */
     $app->get('/candidates/', function () use ($app, $data) {
+        try {
+            $data = json_decode($data);
 
-        $data = json_decode($data);
+            $response = [
+                'results' => json_encode($data->C),
+                'status' => 'OK'
+            ];
+        } catch(Exception $e) {
+            $response = [
+                'error_message' => 'Bad request, I dunno',
+                'results' => [],
+                'status' => 'ERROR'
+            ];
+        }
 
         $app->response()->headers->set('Content-Type', 'application/json');
         $app->response()->setStatus(200);
-
-        echo json_encode($data->C);
+        echo json_encode($response);
+        die();
     });
+
     /**
      * Fetch specific results for a candidate
-     * @todo Add authentification
      * @param $app   Application
      * @param $data  ALL DATA
      */
     $app->get('/candidates/:id', function ($id = null) use ($app, $data) {
-
 
         try {
             $data = json_decode($data);
@@ -110,6 +120,118 @@ $app->group('/api', function () use ($app, $data) {
 
             $response = [
                 'results' => $candidate,
+                'status' => 'OK'
+            ];
+        } catch(Exception $e) {
+            $response = [
+                'error_message' => 'Bad request, I dunno',
+                'results' => [],
+                'status' => 'ERROR'
+            ];
+        }
+
+        $app->response()->headers->set('Content-Type', 'application/json');
+        $app->response()->setStatus(200);
+        echo json_encode($response);
+        die();
+    });
+
+    /**
+     * Fetch all districts
+     * @param $app   Application
+     * @param $data  ALL DATA
+     */
+    $app->get('/districts/', function () use ($app, $data) {
+        try {
+            $data = json_decode($data);
+
+            $response = [
+                'results' =>$data->R,
+                'status' => 'OK'
+            ];
+        } catch(Exception $e) {
+            $response = [
+                'error_message' => 'Bad request, I dunno',
+                'results' => [],
+                'status' => 'ERROR'
+            ];
+        }
+
+        $app->response()->headers->set('Content-Type', 'application/json');
+        $app->response()->setStatus(200);
+        echo json_encode($response);
+        die();
+    });
+
+    /**
+     * Fetch specific results for a district
+     * @param $app   Application
+     * @param $data  ALL DATA
+     */
+    $app->get('/districts/:id', function ($id = null) use ($app, $data) {
+        try {
+            $data = json_decode($data);
+
+            $district = objArraySearch($data->R, 'I', $id);
+
+            $response = [
+                'results' => $district,
+                'status' => 'OK'
+            ];
+        } catch(Exception $e) {
+            $response = [
+                'error_message' => 'Bad request, I dunno',
+                'results' => [],
+                'status' => 'ERROR'
+            ];
+        }
+
+        $app->response()->headers->set('Content-Type', 'application/json');
+        $app->response()->setStatus(200);
+        echo json_encode($response);
+        die();
+    });
+
+    /**
+     * Fetch all parties
+     * @param $app   Application
+     * @param $data  ALL DATA
+     */
+    $app->get('/parties/', function () use ($app, $data) {
+        try {
+            $data = json_decode($data);
+
+            $response = [
+                'results' => $data->P,
+                'status' => 'OK'
+            ];
+        } catch(Exception $e) {
+            $response = [
+                'error_message' => 'Bad request, I dunno',
+                'results' => [],
+                'status' => 'ERROR'
+            ];
+        }
+
+        $app->response()->headers->set('Content-Type', 'application/json');
+        $app->response()->setStatus(200);
+        echo json_encode($response);
+        die();
+    });
+
+    /**
+     * Fetch specific results for a district
+     * @param $app   Application
+     * @param $data  ALL DATA
+     */
+    $app->get('/parties/:id', function ($id = null) use ($app, $data) {
+        try {
+            $data = json_decode($data);
+
+            $party = objArraySearch($data->P, 'I', $id);
+
+            $response = [
+                'results' => $party,
                 'status' => 'OK'
             ];
         } catch(Exception $e) {
