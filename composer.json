@@ -1,0 +1,13 @@
+{
+    "repositories": [
+        {
+            "type": "git",
+            "url": "https://github.com/dominiclord/election-canada-2015.git"
+        }
+    ],
+    "require": {
+        "slim/slim": "2.*",
+        "mustache/mustache": "2.*",
+        "dearon/slim-mustache": "0.1.*"
+    }
+}
