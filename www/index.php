@@ -20,34 +20,76 @@ $app = new Slim([
     'templates.path' => 'templates'
 ]);
 
+
 // Basically all the data from SRC/CBC
 function fetch_data() {
-    $url = 'http://electr.trafficmanager.net/dare';
+    $now = new DateTime('now');
 
-    $connection = curl_init();
-    curl_setopt($connection, CURLOPT_URL, $url);
-    curl_setopt($connection, CURLOPT_RETURNTRANSFER, 1);
+    $base_url = 'http://electr.trafficmanager.net/dare?pts=' . $now->format('YmdHis');
 
-    $headers = [
+    //var_dump($base_url);
+    //die();
+
+    $base_connection = curl_init();
+    curl_setopt($base_connection, CURLOPT_URL, $base_url);
+    curl_setopt($base_connection, CURLOPT_RETURNTRANSFER, 1);
+
+    $base_headers = [
         'Host: electr.trafficmanager.net',
         'Origin: http://ici.radio-canada.ca',
         'Referer: http://ici.radio-canada.ca/resultats-elections-canada-2015/'
     ];
 
-    curl_setopt($connection, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($base_connection, CURLOPT_HTTPHEADER, $base_headers);
 
-    $data = curl_exec($connection);
+    $base_data = curl_exec($base_connection);
 
-    curl_close($connection);
+    curl_close($base_connection);
 
-    if (empty($data)) {
-        $data = file_get_contents('sample.json');
-    } else {
-        // SAVE THAT LOCAL CONTENT
-        file_put_contents('sample.json', $data);
+    /*
+    $update_url = 'http://electr.trafficmanager.net/ren?pts=20151019225130';
+
+    $update_connection = curl_init();
+    curl_setopt($update_connection, CURLOPT_URL, $update_url);
+    curl_setopt($update_connection, CURLOPT_RETURNTRANSFER, 1);
+
+    $update_headers = [
+        'Host: electr.trafficmanager.net',
+        'Origin: http://ici.radio-canada.ca',
+        'Referer: http://ici.radio-canada.ca/resultats-elections-canada-2015/',
+        'Last-Modified: Tue, 20 Oct 2015 03:53:02 GMT'
+    ];
+
+    curl_setopt($update_connection, CURLOPT_HTTPHEADER, $update_headers);
+
+    $update_data = curl_exec($update_connection);
+
+    curl_close($update_connection);
+
+    //if (empty($base_data) || empty($update_data)) {
+    //    $base_data = file_get_contents('sample.json');
+    //} else {
+    //    // SAVE THAT LOCAL CONTENT
+    //    file_put_contents('sample.json', $base_data);
+    //}
+
+    $results = [];
+
+    echo($update_data);
+    die();
+
+    foreach ($update_data as $array) {
+        //$results = array_merge_recursive($results, $array);
+        echo($array);
+        die();
     }
+    die();
 
-    return $data;
+    var_dump($results);
+    die();
+    */
+
+    return $base_data;
 }
 
 // For finding data in this HUUUUUGE array
@@ -66,9 +108,22 @@ $data = fetch_data();
 
 // Basic interface
 $app->get('/', function ( ) use ($app, $data) {
+    try {
+        $response = [
+            'results' => json_decode($data),
+            'status' => 'OK'
+        ];
+    } catch(Exception $e) {
+        $response = [
+            'error_message' => 'Bad request, I dunno',
+            'results' => [],
+            'status' => 'ERROR'
+        ];
+    }
+
     $app->response()->headers->set('Content-Type', 'application/json');
     $app->response()->setStatus(200);
-    echo $data;
+    echo json_encode($response);
     die();
 });
 
