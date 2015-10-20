@@ -89,7 +89,7 @@ $app->group('/api', function () use ($app, $data) {
             $data = json_decode($data);
 
             $response = [
-                'results' => json_encode($data->C),
+                'results' => $data->C,
                 'status' => 'OK'
             ];
         } catch(Exception $e) {
@@ -116,7 +116,7 @@ $app->group('/api', function () use ($app, $data) {
         try {
             $data = json_decode($data);
 
-            $candidate = json_encode(objArraySearch($data->C, 'I', $id));
+            $candidate = objArraySearch($data->C, 'I', $id);
 
             $response = [
                 'results' => $candidate,
