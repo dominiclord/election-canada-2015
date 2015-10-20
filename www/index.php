@@ -42,6 +42,9 @@ function fetch_data() {
 
     if (empty($data)) {
         $data = file_get_contents('sample.json');
+    } else {
+        // SAVE THAT LOCAL CONTENT
+        file_put_contents('sample.json', $data);
     }
 
     return $data;
