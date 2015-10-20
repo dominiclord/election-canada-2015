@@ -276,6 +276,7 @@ $app->group('/api', function () use ($app, $data) {
 
     /**
      * Fetch specific results for a district
+     *
      * @param $app   Application
      * @param $data  ALL DATA
      */
@@ -283,6 +284,24 @@ $app->group('/api', function () use ($app, $data) {
         try {
             $data = json_decode($data);
 
+            /**
+             * @param  I        int     District ID
+             * @param  IEC      int     Official Elections Canada district ID
+             * @param  NAME     string  French district name
+             * @param  NAME_EN  string  English district name
+             * @param  V        int     Number of registered voters
+             * @param  C        array   List of candidate IDs
+             * @param  IP       int     Incumbent party
+             * @param  ITP      int     Winning party
+             * @param  R        string  ? (values of "e" or "a" sometimes)
+             * @param  N        int     ? (some sort of random integer)
+             * @param  PC       int     Counted number of polling booths
+             * @param  PT       int     Total number of polling booths
+             * @param  TS       string  ? (some sort of timestamp)
+             * @param  _TS      string  ? (some sort of timestamp)
+             * @param  KR       int     ? (only seen as zero)
+             * @param  LG       int     ? (only seen as zero)
+             */
             $party = objArraySearch($data->P, 'I', $id);
 
             $response = [
