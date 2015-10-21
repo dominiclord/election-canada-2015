@@ -20,15 +20,15 @@ $app = new Slim([
     'templates.path' => 'templates'
 ]);
 
-
 // Basically all the data from SRC/CBC
 function fetch_data() {
+
+    // ======================
+    // Code that was used on results night
+    // ======================
+    /*
     $now = new DateTime('now');
-
     $base_url = 'http://electr.trafficmanager.net/dare?pts=' . $now->format('YmdHis');
-
-    //var_dump($base_url);
-    //die();
 
     $base_connection = curl_init();
     curl_setopt($base_connection, CURLOPT_URL, $base_url);
@@ -42,58 +42,104 @@ function fetch_data() {
 
     curl_setopt($base_connection, CURLOPT_HTTPHEADER, $base_headers);
 
-    $base_data = curl_exec($base_connection);
+    $data = curl_exec($base_connection);
 
     curl_close($base_connection);
-
-    /*
-    $update_url = 'http://electr.trafficmanager.net/ren?pts=20151019225130';
-
-    $update_connection = curl_init();
-    curl_setopt($update_connection, CURLOPT_URL, $update_url);
-    curl_setopt($update_connection, CURLOPT_RETURNTRANSFER, 1);
-
-    $update_headers = [
-        'Host: electr.trafficmanager.net',
-        'Origin: http://ici.radio-canada.ca',
-        'Referer: http://ici.radio-canada.ca/resultats-elections-canada-2015/',
-        'Last-Modified: Tue, 20 Oct 2015 03:53:02 GMT'
-    ];
-
-    curl_setopt($update_connection, CURLOPT_HTTPHEADER, $update_headers);
-
-    $update_data = curl_exec($update_connection);
-
-    curl_close($update_connection);
-
-    //if (empty($base_data) || empty($update_data)) {
-    //    $base_data = file_get_contents('sample.json');
-    //} else {
-    //    // SAVE THAT LOCAL CONTENT
-    //    file_put_contents('sample.json', $base_data);
-    //}
-
-    $results = [];
-
-    echo($update_data);
-    die();
-
-    foreach ($update_data as $array) {
-        //$results = array_merge_recursive($results, $array);
-        echo($array);
-        die();
-    }
-    die();
-
-    var_dump($results);
-    die();
     */
 
-    return $base_data;
+    $data = file_get_contents('data.json');
+    return json_decode($data);
 }
 
-// For finding data in this HUUUUUGE array
-// @see http://stackoverflow.com/a/28970200
+
+// Basically refetch all the data from SRC/CBC
+function update_data() {
+    // The results are nice and final and archived, so until I make my own version of this data...
+    $data = file_get_contents('http://ici.radio-canada.ca/resultats-elections-canada-2015/scripts/archive.final.dare.js?ts=20151020120005');
+
+    // Some pesky JS vars
+    $data = substr($data, 19, -1);
+    if (!empty($data)) {
+        // Test the JSON
+        if(is_valid_json($data)) {
+            // SAVE THAT LOCAL CONTENT
+            file_put_contents('data.json', $data);
+        } else {
+            throw new Exception('Invalid JSON');
+            exit();
+        }
+    } else {
+        throw new Exception('Empty data from SRC/CBC');
+        exit();
+    }
+
+    return json_decode($data);
+}
+
+/**
+ * Test if string is proper JSON
+ * @param   string   $data_string  String of potential JSON data
+ * @return  string
+ * @see     http://stackoverflow.com/a/15198925
+ */
+function is_valid_json($data_string) {
+    // decode the JSON data
+    $result = json_decode($data_string);
+
+    // switch and check possible JSON errors
+    switch (json_last_error()) {
+        case JSON_ERROR_NONE:
+            $error = ''; // JSON is valid // No error has occurred
+            break;
+        case JSON_ERROR_DEPTH:
+            $error = 'The maximum stack depth has been exceeded.';
+            break;
+        case JSON_ERROR_STATE_MISMATCH:
+            $error = 'Invalid or malformed JSON.';
+            break;
+        case JSON_ERROR_CTRL_CHAR:
+            $error = 'Control character error, possibly incorrectly encoded.';
+            break;
+        case JSON_ERROR_SYNTAX:
+            $error = 'Syntax error, malformed JSON.';
+            break;
+        // PHP >= 5.3.3
+        case JSON_ERROR_UTF8:
+            $error = 'Malformed UTF-8 characters, possibly incorrectly encoded.';
+            break;
+        // PHP >= 5.5.0
+        case JSON_ERROR_RECURSION:
+            $error = 'One or more recursive references in the value to be encoded.';
+            break;
+        // PHP >= 5.5.0
+        case JSON_ERROR_INF_OR_NAN:
+            $error = 'One or more NAN or INF values in the value to be encoded.';
+            break;
+        case JSON_ERROR_UNSUPPORTED_TYPE:
+            $error = 'A value of a type that cannot be encoded was given.';
+            break;
+        default:
+            $error = 'Unknown JSON error occured.';
+            break;
+    }
+
+    if ($error !== '') {
+        // throw the Exception or exit // or whatever :)
+        return false;
+    }
+
+    // everything is OK
+    return true;
+}
+
+/**
+ * For finding data in this HUUUUUGE array
+ *
+ * @param  array   $array  Hay
+ * @param  string  $index  Strain of hay
+ * @param  mixed   $value  Needle
+ * @see http://stackoverflow.com/a/28970200
+ */
 function objArraySearch($array, $index, $value){
     $item = null;
     foreach($array as $arrayInf) {
@@ -104,13 +150,18 @@ function objArraySearch($array, $index, $value){
     return $item;
 }
 
-$data = fetch_data();
+/**
+ * Dump of all data
+ *
+ * @param  $app  Application
+ */
+$app->get('/', function () use ($app) {
 
-// Basic interface
-$app->get('/', function ( ) use ($app, $data) {
+    $data = fetch_data();
+
     try {
         $response = [
-            'results' => json_decode($data),
+            'results' => $data,
             'status' => 'OK'
         ];
     } catch(Exception $e) {
@@ -127,12 +178,36 @@ $app->get('/', function ( ) use ($app, $data) {
     die();
 });
 
+// Basic interface
+$app->get('/update', function () use ($app, $data) {
+    try {
+        $data = update_data();
+
+        $response = [
+            'results' => $data,
+            'status' => 'OK'
+        ];
+    } catch(Exception $e) {
+        $response = [
+            'error_message' => $e,
+            'results' => [],
+            'status' => 'ERROR'
+        ];
+    }
+
+    $app->response()->headers->set('Content-Type', 'application/json');
+    $app->response()->setStatus(200);
+    echo json_encode($response);
+    die();
+});
+
 /**
  * Main API group
  * @param $app   Application
  * @param $data  ALL DATA
  */
-$app->group('/api', function () use ($app, $data) {
+$app->group('/api', function () use ($app) {
+    $data = fetch_data();
 
     /**
      * Fetch all candidates
@@ -141,8 +216,6 @@ $app->group('/api', function () use ($app, $data) {
      */
     $app->get('/candidates/', function () use ($app, $data) {
         try {
-            $data = json_decode($data);
-
             $response = [
                 'results' => $data->C,
                 'status' => 'OK'
@@ -169,8 +242,6 @@ $app->group('/api', function () use ($app, $data) {
     $app->get('/candidates/:id', function ($id = null) use ($app, $data) {
 
         try {
-            $data = json_decode($data);
-
             $candidate = objArraySearch($data->C, 'I', $id);
 
             $response = [
@@ -198,8 +269,6 @@ $app->group('/api', function () use ($app, $data) {
      */
     $app->get('/districts/', function () use ($app, $data) {
         try {
-            $data = json_decode($data);
-
             $response = [
                 'results' =>$data->R,
                 'status' => 'OK'
@@ -225,8 +294,6 @@ $app->group('/api', function () use ($app, $data) {
      */
     $app->get('/districts/:id', function ($id = null) use ($app, $data) {
         try {
-            $data = json_decode($data);
-
             $district = objArraySearch($data->R, 'I', $id);
 
             $response = [
@@ -254,8 +321,6 @@ $app->group('/api', function () use ($app, $data) {
      */
     $app->get('/parties/', function () use ($app, $data) {
         try {
-            $data = json_decode($data);
-
             $response = [
                 'results' => $data->P,
                 'status' => 'OK'
@@ -282,8 +347,6 @@ $app->group('/api', function () use ($app, $data) {
      */
     $app->get('/parties/:id', function ($id = null) use ($app, $data) {
         try {
-            $data = json_decode($data);
-
             /**
              * @param  I        int     District ID
              * @param  IEC      int     Official Elections Canada district ID
